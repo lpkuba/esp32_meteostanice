@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "Z:/škola/pxe/html"
+		},
+		{
+			"name": "ESP32_WebMeteoStanice",
+			"path": "."
+		},
+		{
+			"name": "ESP32_WebMeteoStanice",
+			"path": "Z:/škola/pxe/html/esp/ESP32_WebMeteoStanice"
+		}
+	],
+	"settings": {}
+}
