@@ -1,11 +1,15 @@
 #include <Arduino.h>
 #include <TFT_eSPI.h>
 #include <SPI.h>
+#include <WiFi.h>
 
 
 TFT_eSPI tft = TFT_eSPI();
 
 #define tftCSpin 5
+
+const char* apSsid = "esp32-meteostanice";
+const char* apPass = "Admin123";
 
 
 void setup() {
