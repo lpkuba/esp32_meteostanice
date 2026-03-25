@@ -10,72 +10,65 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
     <style>
+        :root{
+            --base-color: #1279ff;
+            --text-color: #ebebeb;
+        }
         body{
             font-family: Roboto, Arial;
         }
-
-        .dashboard{
-            width: 50%;
-            text-align: justify;
-            display: flex;
-            align-items: left;
-            justify-content: space-evenly;
-            flex-direction: column;
-        }
-        button{
-            width: 10vw;
-            height: 5vh;
-            transition: 0.3s;
-            background-color: green;
-            color: pink;
-        }
-        button:hover{
-            background-color: pink;
-            color: red;
-        }
-        button:active{
-            background-color: red;
-            color: green;
-        }
-
-        input{
-            transition: 0.3s;
-        }
-
-        input:focus{
-            background-color: aqua;
-        }
-
-        .dropdown{
-           width: 200px;
-           display: block;
-        }
-        .dropdown input{
-            width: 100%;
-        }
-        .dropdown-content{
-            background-color: lightblue;
-            margin-top: 5px;
+        nav{
             position: fixed;
-        }
-        .dropdown-content .stops{
-            text-align: left;
-            padding: 5px 0 10px 5px;
-            border: 1px solid gray;
+            top: 0px;
+            left: 0;
             margin: 0;
-            border-collapse: collapse;
-            font-family: Bahnschrift;
-            font-weight: bold;
-            cursor: pointer;
+            background-color: var(--base-color);
+            color: var(--text-color);
+            height: 10vh;
+            width: 100vw;
+            display: flex;
+            align-items: center;
+            padding: 0 1vw 0 1vw;
         }
-        .dropdown-content .stops:hover{
-            background-color: lightcoral;
+        nav h2{
+            font-size: 5vh;
+            color: var(--text-color);
         }
 
-        .dropdown-content .stops .lines{
-            font-size: 10px;
-            font-weight: lighter;
+        nav .time{
+            font-size: 4vh;
+            position: fixed;
+            left: 0;
+            margin-left: 45vw;
+            background-color: white;
+            color: rgb(55 55 55);
+            padding: 1%;
+            border-radius: 10px;
+            font-weight: 500;
+            font-size: 2.5vw;
+            width: 10vw;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 4vh;
         }
+
+        nav .time #seconds{
+            font-size: 1vw;
+            color: gray;
+            margin-left: 0.2vw;
+        }
+
+        nav .hamburger{
+            width: 2vh;
+            height: auto;
+        }
+
+        nav .date{
+            
+        }
+        
     </style>
     <script>
         let stops = {};
@@ -90,6 +83,9 @@
                 threshold: 0.3,
                 limit: 10
             });
+            setInterval(() => {
+                cas();
+            }, 1000);
         }
         function searchChanged(){
             console.log("search changed");
@@ -166,37 +162,23 @@
         function onUpdateText(element){
             element.style.backgroundColor = "";
         }
+
+        function cas(){
+            const cas = new Date();
+            document.getElementById("hhmm").innerHTML = `${String(cas.getHours()).padStart(2, "0")}:${String(cas.getMinutes()).padStart(2, "0")}`;
+            document.getElementById("seconds").innerHTML = `:${String(cas.getSeconds()).padStart(2, "0")}`;
+        }
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
 </head>
 <body onload="init()">
-    <div class="dashboard">
-        <h1>Konfigurační stránka</h1>
-        <label for="zastavka">ID zastávky: </label><input type="text" id="zastavka" onchange="onUpdateText(this)"><br>
-        <label for="interval">Interval aktualizací: </label><input type="number" id="interval" min="5" placeholder="v sekundách" value="5" onchange="onUpdateText(this)"><br>
-        <label for="ssid">SSID 2.4GHz WiFi sítě: </label><input type="text" id="ssid" onchange="onUpdateText(this)"><br>
-        <label for="pass">Heslo sítě </label><input type="password" id="pass" onchange="onUpdateText(this)"><br>
-        <button onclick="save()">Ulož</button>
-        <label for="stopInput">Zadej jméno hledané zastávky:</label>
-        <div class="dropdown">
-            <input type="text" id="stopInput" placeholder="název zastávky..." oninput="searchChanged()" style="display: block" autocomplete="off">
-            <div class="dropdown-content" id="searchDropdown" hidden>
-                <!--<div class="stops">
-                    <span>Zastávka 1</span><br>
-                    <span class="lines">placeholder</span>
-                </div>
-                <div class="stops">
-                    <span>Zastávka 2</span><br>
-                    <span class="lines">bus: 303, 344, 343, 408</span>
-                </div>
-                <div class="stops">
-                    <span>Zastávka 3</span><br>
-                    <span class="lines">bus: 303, 344, 343, 408</span>
-                </div>-->
-            </div>
-        </div><br>
-    </div>
+    <nav>
+        <h2>JolandaMETEO</h2>
+        <div class="time"><span id="hhmm"></span><span id="seconds"></span></div>
+        <div class="hamburger"></div>
+        <div class="date"></div>
+    </nav>
 </body>
 </html>
