@@ -9,11 +9,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/e48644213e.js" crossorigin="anonymous"></script>
+
     <style>
         :root{
-            --base-color: #1279ff;
-            --text-color: #ebebeb;
+            --base-blue: #1279ff;
+            --base-green: #008b23;
+            --text-white: white;
+            --text-black: rgb(55 55 55);
         }
+
         body{
             font-family: Roboto, Arial;
         }
@@ -22,8 +27,8 @@
             top: 0px;
             left: 0;
             margin: 0;
-            background-color: var(--base-color);
-            color: var(--text-color);
+            background-color: var(--base-blue);
+            color: var(--text-white);
             height: 10vh;
             width: 100vw;
             display: flex;
@@ -32,16 +37,16 @@
         }
         nav h2{
             font-size: 5vh;
-            color: var(--text-color);
+            color: var(--text-white);
         }
 
         nav .time{
             font-size: 4vh;
             position: fixed;
             left: 0;
-            margin-left: 45vw;
+            margin-left: 44vw;
             background-color: white;
-            color: rgb(55 55 55);
+            color: var(--text-black);
             padding: 1%;
             border-radius: 10px;
             font-weight: 500;
@@ -61,16 +66,165 @@
         }
 
         nav .hamburger{
-            width: 2vh;
-            height: auto;
+            font-size: 4vh;
+            padding: 0.67vh;
+            margin-left: auto;
+            margin-right: 2vw;
+            background-color: white;
+            border-radius: 5vh;
+            color: var(--text-black);
+            transition: all ease-out 0.2s;
         }
 
-        nav .date{
-            
+        nav .hamburger:hover{
+            background-color: var(--base-green);
+            color: var(--text-white);
+            transform: rotate(360deg);
+        }
+
+        nav .hamburger i{
+            margin: 0;
         }
         
+        #dropdown {
+            display: flex;
+            flex-direction: column;
+            top: 10vh;
+            width: 15vw;
+            font-size: 3.2vh;
+            color: var(--text-black);
+            right: 1vw;
+            position: fixed;
+            align-items: center;
+        }
+
+        #dropdown :last-child{
+            border-radius: 0 0 1vw 1vw;
+            
+        }
+
+        #dropdown span{
+            background-color: lightgray;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all linear 0.1s;
+            text-align: center;
+            height: 8vh;
+        }
+
+        #dropdown span:hover{
+            background-color: rgb(177, 177, 177);
+            width: 100%;
+        }
+
+        #dropdown[hidden]{
+            display: none;
+        }
+
+        .backdrop{
+            background-color: rgba(0, 0, 0, 0.507);
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            left: 0px;
+            top: 0px;
+            z-index: 4;
+        }
+
+        .popup{
+            margin: 0 auto;
+            margin-top: 15vh;
+            min-width: 33vw;
+            max-width: 40vw;
+            height: 70vh;
+            top: 15vh;
+            display: flex;
+            padding-top: 2vh;
+            justify-content: flex-start;
+            background-color: white;
+            box-shadow: 5px 5px 50px 0px #000000;
+            border-radius: 2vh;
+            z-index: 5;
+            flex-direction: column;
+            align-items: center;
+            color: black;
+        }
+        .popup h1{
+            font-size: 4.5vh;
+        }
+        .popup .row{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 90%;
+            font-size: 3vh;
+            height: 10vh;
+        }
+        .popup .row input{
+            height: 80%;
+            min-width: 20vw;
+            max-width: 50%;
+            border-radius: 4vh;
+            border: 2px solid var(--base-blue);
+            font-size: 2.5vh;
+            padding-left: 1vw;
+            transition: 0.3s linear all;
+            outline: none;
+        }
+        .popup .row input:focus-visible{
+            border: 2px solid var(--base-green);
+        }
+        .popup .row button{
+            height: 80%;
+            min-width: 15vw;
+            border-radius: 4vh;
+            font-size: 3vh;
+            margin: 0 auto;
+            background-color: var(--base-green);            
+            color: var(--text-white);
+            transition: all linear 0.1s;
+        }
+        .popup .row button:hover{
+            background-color: darkgreen;
+        }
+        .popup .row button:active{
+            background-color: greenyellow;
+            border-color: var(--base-blue);
+            color: black;
+        }
+        .popup label{
+            font-family: Roboto;
+        }
+        @media screen and (max-width: 800px) {
+            .popup#wifi{
+                max-width: 90vw;
+            }
+            nav h2{
+                font-size: 2vh;
+            }
+            nav .time{
+                font-weight: 500;
+                font-size: 4vh;
+                height: 10vh;
+                min-width: 30vw;
+                margin-left: 39vw;
+            }
+            nav .time > #seconds{
+                font-size: 2vh;
+            }
+            .popup .row button{
+                width: 50vw;
+            }
+        }
     </style>
     <script>
+        //const ip = window.location.hostname;
+        const ip = "192.168.2.54";
+        const socket = new WebSocket(`ws://${ip}/ws`);
+        let debug = true;
+
         let stops = {};
         let stopsMap, stopsMappedArray, fuseStops, fetchOpt, fuse, selectedStop, updateIntervalId;
         selectedStop = {};
@@ -87,6 +241,20 @@
                 cas();
             }, 1000);
         }
+        socket.addEventListener("open", (event) => {
+            console.log("JolandaMETEO WebSocket initialized...");
+            //socket.send("cauky mnauky\n");
+        })
+        socket.addEventListener("message", (msg) => {
+            console.log(msg);
+            console.log(JSON.parse(msg.data));
+        })
+        window.addEventListener('click', (event) => {
+          // Kontrola: Pokud kliknutí NEBYLO na tlačítku ani uvnitř dropdownu
+          if (!document.getElementById("dropdown").contains(event.target) && !document.getElementById("hamburger").contains(event.target)) {
+            document.getElementById("dropdown").hidden = true;
+          }
+        });
         function searchChanged(){
             console.log("search changed");
             let searchInput = document.getElementById("stopInput").value;
@@ -168,6 +336,11 @@
             document.getElementById("hhmm").innerHTML = `${String(cas.getHours()).padStart(2, "0")}:${String(cas.getMinutes()).padStart(2, "0")}`;
             document.getElementById("seconds").innerHTML = `:${String(cas.getSeconds()).padStart(2, "0")}`;
         }
+
+        function dropdown(){
+            document.getElementById("dropdown").hidden = !document.getElementById("dropdown").hidden;
+            
+        }
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -176,9 +349,34 @@
 <body onload="init()">
     <nav>
         <h2>JolandaMETEO</h2>
-        <div class="time"><span id="hhmm"></span><span id="seconds"></span></div>
-        <div class="hamburger"></div>
-        <div class="date"></div>
+        <div class="time">
+            <span id="hhmm"></span>
+            <span id="seconds"></span>
+        </div>
+        <div class="hamburger" onclick="dropdown()" id="hamburger">
+            <i class="fa-solid fa-bars"></i>
+        </div>
     </nav>
+    <div id="dropdown" hidden>
+        <span>Nastavení Wi-Fi</span>
+        <span>Nastavení zdrojů</span>
+        <span>Nastavení stránky</span>
+        <span>Status</span>
+        <span>Restart</span>
+    </div>
+    <div class="backdrop">
+        <div class="popup" id="wifi">
+            <h1>Nastavení Wi-Fi</h1>
+            <div class="row">
+                <label for="ssid">Název 2.4GHz sítě </label><input type="text" id="ssid">
+            </div>
+            <div class="row">
+                <label for="pass">Heslo sítě </label><input type="password" id="pass">
+            </div>
+            <div class="row">
+                <button>Uložit</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
