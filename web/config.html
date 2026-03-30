@@ -14,7 +14,9 @@
     <style>
         :root{
             --base-blue: #1279ff;
+            --base-red: #dd1111;
             --base-green: #008b23;
+            --base-orange: #ff7b2e;
             --text-white: white;
             --text-black: rgb(55 55 55);
         }
@@ -150,6 +152,7 @@
             flex-direction: column;
             align-items: center;
             color: black;
+            transition: transform 1s ease-in-out;
         }
         .popup h1{
             font-size: 4.5vh;
@@ -197,6 +200,38 @@
         .popup label{
             font-family: Roboto;
         }
+
+
+        #closePopup,
+        #resetPopup{
+            position: absolute;
+            left: 72vw;
+            background-color: white;
+            color: var(--text-black);
+            font-weight: 500;
+            font-size: 3vw;
+            border-radius: 4vw;
+            height: 4vw;
+            width: 4vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.15s linear, color 0.15s linear, transform 0.3s ease-out;
+        }
+        #resetPopup{
+            margin-top: 5vw;
+        }
+        #resetPopup:hover{
+            background-color: var(--base-orange);
+            color: var(--text-white);
+            transform: translateX(0.5vw);           
+        }
+        #closePopup:hover{
+            background-color: var(--base-red);
+            color: var(--text-white);
+            transform: translateX(0.5vw);
+        }
+
         @media screen and (max-width: 800px) {
             .popup#wifi{
                 max-width: 90vw;
@@ -217,12 +252,27 @@
             .popup .row button{
                 width: 50vw;
             }
+            #closePopup
+            {
+                width: 6vw;
+                height: 6vw;
+                top: 8vh;
+                left: 88vw;
+                font-size: 4vw;
+            }
+            #closePopup:hover{
+                transform: translateY(-0.5vw);
+            }
+            #resetPopup{
+                display: none;
+            }
         }
     </style>
     <script>
         //const ip = window.location.hostname;
         const ip = "192.168.2.54";
         const socket = new WebSocket(`ws://${ip}/ws`);
+        let isLocal = (ip == "192.168.4.1");
         let debug = true;
 
         let stops = {};
@@ -230,13 +280,15 @@
         selectedStop = {};
         selectedStop.uniqueName = "Vyber zastávku!";
         async function init(){
-            let result = await fetch("https://lpkuba.github.io/stops.json");
-            stops = await result.json();
-            fuse = new Fuse(stops.stopGroups,{
-                keys: [{name:'uniqueName', weight: 3}, {name:'stops.altIdosName', weight: 1}],
-                threshold: 0.3,
-                limit: 10
-            });
+            if(!isLocal){
+                let result = await fetch("https://lpkuba.github.io/stops.json");
+                stops = await result.json();
+                fuse = new Fuse(stops.stopGroups,{
+                    keys: [{name:'uniqueName', weight: 3}, {name:'stops.altIdosName', weight: 1}],
+                    threshold: 0.3,
+                    limit: 10
+                });
+            }   
             setInterval(() => {
                 cas();
             }, 1000);
@@ -364,8 +416,10 @@
         <span>Status</span>
         <span>Restart</span>
     </div>
-    <div class="backdrop">
+    <div class="backdrop" onclick="zavriPopup()">
         <div class="popup" id="wifi">
+            <div id="closePopup">×</div>
+            <div id="resetPopup">↻</div>
             <h1>Nastavení Wi-Fi</h1>
             <div class="row">
                 <label for="ssid">Název 2.4GHz sítě </label><input type="text" id="ssid">
