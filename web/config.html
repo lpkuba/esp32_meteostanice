@@ -133,6 +133,7 @@
             left: 0px;
             top: 0px;
             z-index: 4;
+            transition: all 1s ease-in-out;
         }
 
         .popup{
@@ -154,6 +155,28 @@
             color: black;
             transition: transform 1s ease-in-out;
         }
+
+        .popup.hidden{
+            transform: translateY(100vh);
+        }
+
+        .backdrop.hidden{
+            background-color: transparent;
+            display: none;
+        }
+
+        .backdrop:has(.popup.hidden){
+            background-color: transparent;
+        }
+
+        .popup.hidden > #closePopup.control,
+        .popup.hidden > #resetPopup.control{
+            color: transparent;
+            background-color: transparent;
+            transition: all 1s ease-in-out;
+        }
+
+        
         .popup h1{
             font-size: 4.5vh;
         }
@@ -165,6 +188,7 @@
             font-size: 3vh;
             height: 10vh;
         }
+
         .popup .row input{
             height: 80%;
             min-width: 20vw;
@@ -178,6 +202,10 @@
         }
         .popup .row input:focus-visible{
             border: 2px solid var(--base-green);
+        }
+        .popup .row input:disabled{
+            background-color: lightgray;
+            border-color: gray;
         }
         .popup .row button{
             height: 80%;
@@ -274,6 +302,8 @@
         const socket = new WebSocket(`ws://${ip}/ws`);
         let isLocal = (ip == "192.168.4.1");
         let debug = true;
+        let lastData = {};
+        let currentPopup = "wifi";
 
         let stops = {};
         let stopsMap, stopsMappedArray, fuseStops, fetchOpt, fuse, selectedStop, updateIntervalId;
@@ -288,10 +318,14 @@
                     threshold: 0.3,
                     limit: 10
                 });
+            }
+            else{
+                
             }   
             setInterval(() => {
                 cas();
             }, 1000);
+            
         }
         socket.addEventListener("open", (event) => {
             console.log("JolandaMETEO WebSocket initialized...");
@@ -391,7 +425,19 @@
 
         function dropdown(){
             document.getElementById("dropdown").hidden = !document.getElementById("dropdown").hidden;
-            
+        }
+
+        function zavriPopup(){
+            document.getElementById(currentPopup).classList.add("hidden");
+            setTimeout(() => {document.getElementById("backdrop").classList.add("hidden")}, 1000);
+            currentPopup = "";
+        }
+
+        function otevriPopup(id){
+            document.getElementById(id).classList.remove("hidden");
+            document.getElementById("backdrop").classList.remove("hidden");
+            currentPopup = id;
+
         }
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -410,16 +456,16 @@
         </div>
     </nav>
     <div id="dropdown" hidden>
-        <span>Nastavení Wi-Fi</span>
+        <span onclick='otevriPopup("wifi")'>Nastavení Wi-Fi</span>
         <span>Nastavení zdrojů</span>
         <span>Nastavení stránky</span>
         <span>Status</span>
         <span>Restart</span>
     </div>
-    <div class="backdrop" onclick="zavriPopup()">
-        <div class="popup" id="wifi">
-            <div id="closePopup">×</div>
-            <div id="resetPopup">↻</div>
+    <div class="backdrop hidden" id="backdrop">
+        <div class="popup hidden" id="wifi">
+            <div id="closePopup" class="control" onclick="zavriPopup()">×</div>
+            <div id="resetPopup" class="control">↻</div>
             <h1>Nastavení Wi-Fi</h1>
             <div class="row">
                 <label for="ssid">Název 2.4GHz sítě </label><input type="text" id="ssid">
