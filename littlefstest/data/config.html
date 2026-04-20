@@ -9,88 +9,354 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/e48644213e.js" crossorigin="anonymous"></script>
+
     <style>
+        :root{
+            --base-blue: #1279ff;
+            --base-red: #dd1111;
+            --base-green: #008b23;
+            --base-orange: #ff7b2e;
+            --text-white: white;
+            --text-black: rgb(55 55 55);
+        }
+
         body{
             font-family: Roboto, Arial;
         }
-
-        .dashboard{
-            width: 50%;
-            text-align: justify;
+        nav{
+            position: fixed;
+            top: 0px;
+            left: 0;
+            margin: 0;
+            background-color: var(--base-blue);
+            color: var(--text-white);
+            height: 10vh;
+            width: 100vw;
             display: flex;
-            align-items: left;
-            justify-content: space-evenly;
-            flex-direction: column;
+            align-items: center;
+            padding: 0 1vw 0 1vw;
         }
-        button{
+        nav h2{
+            font-size: 5vh;
+            color: var(--text-white);
+        }
+
+        nav .time{
+            font-size: 4vh;
+            position: fixed;
+            left: 0;
+            margin-left: 44vw;
+            background-color: white;
+            color: var(--text-black);
+            padding: 1%;
+            border-radius: 10px;
+            font-weight: 500;
+            font-size: 2.5vw;
             width: 10vw;
-            height: 5vh;
-            transition: 0.3s;
-            background-color: green;
-            color: pink;
-        }
-        button:hover{
-            background-color: pink;
-            color: red;
-        }
-        button:active{
-            background-color: red;
-            color: green;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 4vh;
         }
 
-        input{
-            transition: 0.3s;
+        nav .time #seconds{
+            font-size: 1vw;
+            color: gray;
+            margin-left: 0.2vw;
         }
 
-        input:focus{
-            background-color: aqua;
+        nav .hamburger{
+            font-size: 4vh;
+            padding: 0.67vh;
+            margin-left: auto;
+            margin-right: 2vw;
+            background-color: white;
+            border-radius: 5vh;
+            color: var(--text-black);
+            transition: all ease-out 0.2s;
         }
 
-        .dropdown{
-           width: 200px;
-           display: block;
+        nav .hamburger:hover{
+            background-color: var(--base-green);
+            color: var(--text-white);
+            transform: rotate(360deg);
         }
-        .dropdown input{
+
+        nav .hamburger i{
+            margin: 0;
+        }
+        
+        #dropdown {
+            display: flex;
+            flex-direction: column;
+            top: 10vh;
+            width: 15vw;
+            font-size: 3.2vh;
+            color: var(--text-black);
+            right: 1vw;
+            position: fixed;
+            align-items: center;
+        }
+
+        #dropdown :last-child{
+            border-radius: 0 0 1vw 1vw;
+            
+        }
+
+        #dropdown span{
+            background-color: lightgray;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all linear 0.1s;
+            text-align: center;
+            height: 8vh;
+        }
+
+        #dropdown span:hover{
+            background-color: rgb(177, 177, 177);
             width: 100%;
         }
-        .dropdown-content{
-            background-color: lightblue;
-            margin-top: 5px;
-            position: fixed;
-        }
-        .dropdown-content .stops{
-            text-align: left;
-            padding: 5px 0 10px 5px;
-            border: 1px solid gray;
-            margin: 0;
-            border-collapse: collapse;
-            font-family: Bahnschrift;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .dropdown-content .stops:hover{
-            background-color: lightcoral;
+
+        #dropdown[hidden]{
+            display: none;
         }
 
-        .dropdown-content .stops .lines{
-            font-size: 10px;
-            font-weight: lighter;
+        .backdrop{
+            background-color: rgba(0, 0, 0, 0.507);
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            left: 0px;
+            top: 0px;
+            z-index: 4;
+            transition: all 1s ease-in-out;
+        }
+
+        .popup{
+            margin: 0 auto;
+            left: 33vw;
+            min-width: 33vw;
+            max-width: 40vw;
+            height: 70vh;
+            top: 15vh;
+            display: flex;
+            padding-top: 2vh;
+            justify-content: flex-start;
+            background-color: white;
+            box-shadow: 5px 5px 50px 0px #000000;
+            border-radius: 2vh;
+            z-index: 5;
+            flex-direction: column;
+            align-items: center;
+            color: black;
+            transition: transform 1s ease-in-out;
+            position:fixed;
+        }
+
+        .popup.hidden{
+            transform: translateY(100vh);
+        }
+
+        .backdrop.hidden{
+            background-color: transparent;
+        }
+
+        .popup.hidden > #closePopup.control,
+        .popup.hidden > #resetPopup.control{
+            color: transparent;
+            background-color: transparent;
+            transition: all 1s ease-in-out;
+        }
+
+        
+        .popup h1{
+            font-size: 4.5vh;
+        }
+        .popup .row{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 90%;
+            font-size: 3vh;
+            height: 10vh;
+        }
+
+        .popup .row input{
+            height: 80%;
+            min-width: 20vw;
+            max-width: 50%;
+            border-radius: 4vh;
+            border: 2px solid var(--base-blue);
+            font-size: 2.5vh;
+            padding-left: 1vw;
+            transition: 0.3s linear all;
+            outline: none;
+        }
+        .popup .row input:focus-visible{
+            border: 2px solid var(--base-green);
+        }
+        .popup .row input:disabled{
+            background-color: lightgray;
+            border-color: gray;
+        }
+        .popup .row button{
+            height: 80%;
+            min-width: 15vw;
+            border-radius: 4vh;
+            font-size: 3vh;
+            margin: 0 auto;
+            background-color: var(--base-green);            
+            color: var(--text-white);
+            transition: all linear 0.1s;
+        }
+        .popup .row button:hover{
+            background-color: darkgreen;
+        }
+        .popup .row button:active{
+            background-color: greenyellow;
+            border-color: var(--base-blue);
+            color: black;
+        }
+        .popup label{
+            font-family: Roboto;
+        }
+
+
+        #closePopup,
+        #resetPopup{
+            position: absolute;
+            left: 35vw;
+            background-color: white;
+            color: var(--text-black);
+            font-weight: 500;
+            font-size: 3vw;
+            border-radius: 4vw;
+            height: 4vw;
+            width: 4vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.15s linear, color 0.15s linear, transform 0.3s ease-out;
+        }
+        #resetPopup{
+            margin-top: 5vw;
+        }
+        #resetPopup:hover{
+            background-color: var(--base-orange);
+            color: var(--text-white);
+            transform: translateX(0.5vw);           
+        }
+        #closePopup:hover{
+            background-color: var(--base-red);
+            color: var(--text-white);
+            transform: translateX(0.5vw);
+        }
+        .content{
+            width: 100%;
+            top: 12vh;
+            left: 0;
+            position: fixed;
+            padding: 5vh 5vw;
+            display: flex;
+            flex-direction: column;
+        }
+        @media screen and (max-width: 800px) {
+            .popup#wifi{
+                max-width: 90vw;
+            }
+            nav h2{
+                font-size: 2vh;
+            }
+            nav .time{
+                font-weight: 500;
+                font-size: 4vh;
+                height: 10vh;
+                min-width: 30vw;
+                margin-left: 39vw;
+            }
+            nav .time > #seconds{
+                font-size: 2vh;
+            }
+            .popup .row button{
+                width: 50vw;
+            }
+            #closePopup
+            {
+                width: 6vw;
+                height: 6vw;
+                top: 8vh;
+                left: 88vw;
+                font-size: 4vw;
+            }
+            #closePopup:hover{
+                transform: translateY(-0.5vw);
+            }
+            #resetPopup{
+                display: none;
+            }
         }
     </style>
     <script>
+        //const ip = window.location.hostname;
+        const ip = "192.168.2.54";
+        const socket = new WebSocket(`ws://${ip}/ws`);
+        let isLocal = (ip == "192.168.4.1");
+        let debug = true;
+        let lastData = {};
+        let currentPopup = "wifi";
+
         let stops = {};
         let stopsMap, stopsMappedArray, fuseStops, fetchOpt, fuse, selectedStop, updateIntervalId;
         selectedStop = {};
         selectedStop.uniqueName = "Vyber zastávku!";
         async function init(){
-            let result = await fetch("https://lpkuba.github.io/stops.json");
-            stops = await result.json();
-            fuse = new Fuse(stops.stopGroups,{
-                keys: [{name:'uniqueName', weight: 3}, {name:'stops.altIdosName', weight: 1}],
-                threshold: 0.3,
-                limit: 10
-            });
+            if(!isLocal){
+                let result = await fetch("https://lpkuba.github.io/stops.json");
+                stops = await result.json();
+                fuse = new Fuse(stops.stopGroups,{
+                    keys: [{name:'uniqueName', weight: 3}, {name:'stops.altIdosName', weight: 1}],
+                    threshold: 0.3,
+                    limit: 10
+                });
+            }
+            else{
+                for (const element of document.querySelectorAll("[data-onlyLocal]")) {
+                    element.disabled = true;
+                }
+                
+            }   
+            setInterval(() => {
+                cas();
+            }, 1000);
+            
         }
+        socket.addEventListener("open", (event) => {
+            console.log("JolandaMETEO WebSocket initialized...");
+            //socket.send("cauky mnauky\n");
+        })
+        socket.addEventListener("message", (msg) => {
+            if(msg.data == "ok"){
+                alert("ESP přijmulo aktualizaci konfigurace!");
+                return;
+            }
+            let inData = JSON.parse(msg.data);
+            if(inData.dataType == "info"){
+                document.getElementById("uptime").innerHTML = Math.floor(inData.data.system.uptime/1000) + " sekund";
+                document.getElementById("ssidStatus").innerHTML = inData.data.wifi.ssid;
+                document.getElementById("ipStatus").innerHTML = inData.data.wifi.address;
+
+            }
+        })
+        window.addEventListener('click', (event) => {
+          // Kontrola: Pokud kliknutí NEBYLO na tlačítku ani uvnitř dropdownu
+          if (!document.getElementById("dropdown").contains(event.target) && !document.getElementById("hamburger").contains(event.target)) {
+            document.getElementById("dropdown").hidden = true;
+          }
+        });
         function searchChanged(){
             console.log("search changed");
             let searchInput = document.getElementById("stopInput").value;
@@ -144,27 +410,95 @@
         }
 
         function save(){
-            let stopId = document.getElementById("zastavka").value;
-            let interval = document.getElementById("interval").value;
-            let ssid = document.getElementById("ssid").value;
-            let pass = document.getElementById("pass").value;
-            if(stopId == ""){
-                document.getElementById("zastavka").style.backgroundColor = "red";
+            let allow = true;
+            let data = {};
+            switch (currentPopup) {
+                case "wifi":
+                    console.log("WiFi posílá data!");
+                    let ssid = document.getElementById("ssid").value;
+                    let pass = document.getElementById("pass").value;
+                    if(ssid == ""){
+                        document.getElementById("ssid").style.backgroundColor = "red";
+                        allow = false;
+                    }
+                    else{
+                        document.getElementById("ssid").style.backgroundColor = "";
+                        data.ssid = ssid;
+                    }
+                    if(pass == ""){
+                        document.getElementById("pass").style.backgroundColor = "red";
+                        allow = false;
+                        data.pass = pass;
+                    }
+                    else{
+                        document.getElementById("pass").style.backgroundColor = "";
+                    }
+
+                    if(allow && isLocal){
+                        sendWsData(currentPopup,data);
+                    }
+                    else{
+                        alert("Použijte konfigurační režim pro konfiguraci citlivých údajů!");
+                    }
+                break;
+                case "sources":
+                    console.log("Sources posílá data!");
+                    let api = document.getElementById("apiKey").value;
+                    data.stopId = document.getElementById("stopId").value;
+                    data.onlInterval = document.getElementById("onlInterval").value*1; //online interval pro fetch věcí z netu
+                    data.offInterval = document.getElementById("offInterval").value*1; //offline interval update senzorů
+                    if(api != "" && !isLocal){
+                        document.getElementById("apiKey").style.backgroundColor = "red";
+                        allow = false;
+                    }
+                    else{
+                        document.getElementById("apiKey").style.backgroundColor = "";
+                        data.api = api;
+                    }
+                    if(!allow){
+                        alert("API klíč lze nastavit pouze v konfiguračním režimu!");
+                    }
+                    else{
+                        sendWsData(currentPopup,data);
+                    }
+                break;
             }
-            if(interval == ""){
-                document.getElementById("interval").style.backgroundColor = "red";
-            }
-            /*if(ssid == ""){
-                document.getElementById("ssid").style.backgroundColor = "red";
-            }
-            if(pass == ""){
-                document.getElementById("pass").style.backgroundColor = "red";
-            }*/
-            fetch(`/update?id=${stopId.length > 0 ? stopId : 0}&interval=${interval.length > 0 ? interval : 10}${ssid.length > 0 ? "&ssid=" + ssid : ""}${pass.length > 0 ? "&pass=" + pass : ""}`);
         }
 
         function onUpdateText(element){
             element.style.backgroundColor = "";
+        }
+
+        function cas(){
+            const cas = new Date();
+            document.getElementById("hhmm").innerHTML = `${String(cas.getHours()).padStart(2, "0")}:${String(cas.getMinutes()).padStart(2, "0")}`;
+            document.getElementById("seconds").innerHTML = `:${String(cas.getSeconds()).padStart(2, "0")}`;
+        }
+
+        function dropdown(){
+            document.getElementById("dropdown").hidden = !document.getElementById("dropdown").hidden;
+        }
+
+        function zavriPopup(){
+            document.getElementById(currentPopup).classList.add("hidden");
+            document.getElementById("backdrop").classList.add("hidden");
+
+            setTimeout(() => {document.getElementById("backdrop").hidden = true}, 1000);
+            currentPopup = "";
+        }
+
+        function otevriPopup(id){
+            document.getElementById(id).classList.remove("hidden");
+            document.getElementById("backdrop").classList.remove("hidden");
+            document.getElementById("backdrop").hidden = false;
+            currentPopup = id;
+        }
+
+        function sendWsData(popup, data){
+            socket.send(JSON.stringify({
+              "dataType": popup,
+              "data": data
+            }))
         }
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -172,31 +506,70 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
 </head>
 <body onload="init()">
-    <div class="dashboard">
-        <h1>Konfigurační stránka</h1>
-        <label for="zastavka">ID zastávky: </label><input type="text" id="zastavka" onchange="onUpdateText(this)"><br>
-        <label for="interval">Interval aktualizací: </label><input type="number" id="interval" min="5" placeholder="v sekundách" value="5" onchange="onUpdateText(this)"><br>
-        <label for="ssid">SSID 2.4GHz WiFi sítě: </label><input type="text" id="ssid" onchange="onUpdateText(this)"><br>
-        <label for="pass">Heslo sítě </label><input type="password" id="pass" onchange="onUpdateText(this)"><br>
-        <button onclick="save()">Ulož</button>
-        <label for="stopInput">Zadej jméno hledané zastávky:</label>
-        <div class="dropdown">
-            <input type="text" id="stopInput" placeholder="název zastávky..." oninput="searchChanged()" style="display: block" autocomplete="off">
-            <div class="dropdown-content" id="searchDropdown" hidden>
-                <!--<div class="stops">
-                    <span>Zastávka 1</span><br>
-                    <span class="lines">placeholder</span>
-                </div>
-                <div class="stops">
-                    <span>Zastávka 2</span><br>
-                    <span class="lines">bus: 303, 344, 343, 408</span>
-                </div>
-                <div class="stops">
-                    <span>Zastávka 3</span><br>
-                    <span class="lines">bus: 303, 344, 343, 408</span>
-                </div>-->
+    <nav>
+        <h2>JolandaMETEO</h2>
+        <div class="time">
+            <span id="hhmm"></span>
+            <span id="seconds"></span>
+        </div>
+        <div class="hamburger" onclick="dropdown()" id="hamburger">
+            <i class="fa-solid fa-bars"></i>
+        </div>
+    </nav>
+    <div class="content">
+        <div class="row">
+            <span>UPTIME esp: &nbsp;</span><span id="uptime"></span>
+        </div>
+        <div class="row">
+            <span>WiFi SSID: &nbsp;</span><span id="ssidStatus"></span>
+        </div>
+        <div class="row">
+            <span>WiFi IP: &nbsp;</span><span id="ipStatus"></span>
+        </div>
+
+    </div>
+    <div id="dropdown" hidden>
+        <span onclick='otevriPopup("wifi")'>Nastavení Wi-Fi</span>
+        <span onclick='otevriPopup("sources")'>Nastavení zdrojů</span>
+        <span>Nastavení stránky</span>
+        <span>Status</span>
+        <span>Restart</span>
+    </div>
+    <div class="backdrop hidden" id="backdrop" hidden>
+        <div class="popup hidden" id="wifi">
+            <div id="closePopup" class="control" onclick="zavriPopup()">×</div>
+            <div id="resetPopup" class="control">↻</div>
+            <h1>Nastavení Wi-Fi</h1>
+            <div class="row">
+                <label for="ssid">Název 2.4GHz sítě </label><input type="text" id="ssid" data-onlyLocal>
             </div>
-        </div><br>
+            <div class="row">
+                <label for="pass">Heslo sítě </label><input type="password" id="pass" data-onlyLocal>
+            </div>
+            <div class="row">
+                <button onclick="save()">Uložit</button>
+            </div>
+        </div>
+        <div class="popup hidden" id="sources">
+            <div id="closePopup" class="control" onclick="zavriPopup()">×</div>
+            <div id="resetPopup" class="control">↻</div>
+            <h1>Nastavení Zdrojů</h1>
+            <div class="row">
+                <label for="apiKey">Golemio API klíč </label><input type="text" id="apiKey" data-onlyLocal>
+            </div>
+            <div class="row">
+                <label for="stopId">GTFS node ID:</label><input type="text" id="stopId">
+            </div>
+            <div class="row">
+                <label for="onlInterval">Online Interval </label><input type="number" id="onlInterval" data-onlyLocal step="5" min="0" placeholder="sekundy">
+            </div>
+            <div class="row">
+                <label for="offInterval">Offline Interval </label><input type="number" id="offInterval" data-onlyLocal step="5" min="0" placeholder="sekundy">
+            </div>
+            <div class="row">
+                <button onclick="save()">Uložit</button>
+            </div>
+        </div>
     </div>
 </body>
 </html>
