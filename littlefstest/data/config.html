@@ -301,8 +301,8 @@
         }
     </style>
     <script>
-        //const ip = window.location.hostname;
-        const ip = "192.168.2.54";
+        const ip = window.location.hostname;
+        //const ip = "192.168.4.54";
         const socket = new WebSocket(`ws://${ip}/ws`);
         let isLocal = (ip == "192.168.4.1");
         let debug = true;
@@ -315,6 +315,15 @@
         selectedStop.uniqueName = "Vyber zastávku!";
         async function init(){
             if(!isLocal){
+                alert("zapínám disabled");
+
+                for (const element of document.querySelectorAll("[data-onlyLocal]")) {
+                    element.disabled = true;
+                }
+
+            }
+            else{
+                alert("vypínám disabled");
                 let result = await fetch("https://lpkuba.github.io/stops.json");
                 stops = await result.json();
                 fuse = new Fuse(stops.stopGroups,{
@@ -322,10 +331,8 @@
                     threshold: 0.3,
                     limit: 10
                 });
-            }
-            else{
                 for (const element of document.querySelectorAll("[data-onlyLocal]")) {
-                    element.disabled = true;
+                    element.disabled = false;
                 }
                 
             }   
