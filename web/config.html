@@ -138,7 +138,7 @@
 
         .popup{
             margin: 0 auto;
-            margin-top: 15vh;
+            left: 33vw;
             min-width: 33vw;
             max-width: 40vw;
             height: 70vh;
@@ -154,6 +154,7 @@
             align-items: center;
             color: black;
             transition: transform 1s ease-in-out;
+            position:fixed;
         }
 
         .popup.hidden{
@@ -161,11 +162,6 @@
         }
 
         .backdrop.hidden{
-            background-color: transparent;
-            display: none;
-        }
-
-        .backdrop:has(.popup.hidden){
             background-color: transparent;
         }
 
@@ -233,7 +229,7 @@
         #closePopup,
         #resetPopup{
             position: absolute;
-            left: 72vw;
+            left: 35vw;
             background-color: white;
             color: var(--text-black);
             font-weight: 500;
@@ -259,7 +255,15 @@
             color: var(--text-white);
             transform: translateX(0.5vw);
         }
-
+        .content{
+            width: 100%;
+            top: 12vh;
+            left: 0;
+            position: fixed;
+            padding: 5vh 5vw;
+            display: flex;
+            flex-direction: column;
+        }
         @media screen and (max-width: 800px) {
             .popup#wifi{
                 max-width: 90vw;
@@ -320,6 +324,9 @@
                 });
             }
             else{
+                for (const element of document.querySelectorAll("[data-onlyLocal]")) {
+                    element.disabled = true;
+                }
                 
             }   
             setInterval(() => {
@@ -332,8 +339,17 @@
             //socket.send("cauky mnauky\n");
         })
         socket.addEventListener("message", (msg) => {
-            console.log(msg);
-            console.log(JSON.parse(msg.data));
+            if(msg.data == "ok"){
+                alert("ESP přijmulo aktualizaci konfigurace!");
+                return;
+            }
+            let inData = JSON.parse(msg.data);
+            if(inData.dataType == "info"){
+                document.getElementById("uptime").innerHTML = Math.floor(inData.data.system.uptime/1000) + " sekund";
+                document.getElementById("ssidStatus").innerHTML = inData.data.wifi.ssid;
+                document.getElementById("ipStatus").innerHTML = inData.data.wifi.address;
+
+            }
         })
         window.addEventListener('click', (event) => {
           // Kontrola: Pokud kliknutí NEBYLO na tlačítku ani uvnitř dropdownu
@@ -394,23 +410,59 @@
         }
 
         function save(){
-            let stopId = document.getElementById("zastavka").value;
-            let interval = document.getElementById("interval").value;
-            let ssid = document.getElementById("ssid").value;
-            let pass = document.getElementById("pass").value;
-            if(stopId == ""){
-                document.getElementById("zastavka").style.backgroundColor = "red";
+            let allow = true;
+            let data = {};
+            switch (currentPopup) {
+                case "wifi":
+                    console.log("WiFi posílá data!");
+                    let ssid = document.getElementById("ssid").value;
+                    let pass = document.getElementById("pass").value;
+                    if(ssid == ""){
+                        document.getElementById("ssid").style.backgroundColor = "red";
+                        allow = false;
+                    }
+                    else{
+                        document.getElementById("ssid").style.backgroundColor = "";
+                        data.ssid = ssid;
+                    }
+                    if(pass == ""){
+                        document.getElementById("pass").style.backgroundColor = "red";
+                        allow = false;
+                        data.pass = pass;
+                    }
+                    else{
+                        document.getElementById("pass").style.backgroundColor = "";
+                    }
+
+                    if(allow && isLocal){
+                        sendWsData(currentPopup,data);
+                    }
+                    else{
+                        alert("Použijte konfigurační režim pro konfiguraci citlivých údajů!");
+                    }
+                break;
+                case "sources":
+                    console.log("Sources posílá data!");
+                    let api = document.getElementById("apiKey").value;
+                    data.stopId = document.getElementById("stopId").value;
+                    data.onlInterval = document.getElementById("onlInterval").value*1; //online interval pro fetch věcí z netu
+                    data.offInterval = document.getElementById("offInterval").value*1; //offline interval update senzorů
+                    if(api != "" && !isLocal){
+                        document.getElementById("apiKey").style.backgroundColor = "red";
+                        allow = false;
+                    }
+                    else{
+                        document.getElementById("apiKey").style.backgroundColor = "";
+                        data.api = api;
+                    }
+                    if(!allow){
+                        alert("API klíč lze nastavit pouze v konfiguračním režimu!");
+                    }
+                    else{
+                        sendWsData(currentPopup,data);
+                    }
+                break;
             }
-            if(interval == ""){
-                document.getElementById("interval").style.backgroundColor = "red";
-            }
-            /*if(ssid == ""){
-                document.getElementById("ssid").style.backgroundColor = "red";
-            }
-            if(pass == ""){
-                document.getElementById("pass").style.backgroundColor = "red";
-            }*/
-            fetch(`/update?id=${stopId.length > 0 ? stopId : 0}&interval=${interval.length > 0 ? interval : 10}${ssid.length > 0 ? "&ssid=" + ssid : ""}${pass.length > 0 ? "&pass=" + pass : ""}`);
         }
 
         function onUpdateText(element){
@@ -429,15 +481,24 @@
 
         function zavriPopup(){
             document.getElementById(currentPopup).classList.add("hidden");
-            setTimeout(() => {document.getElementById("backdrop").classList.add("hidden")}, 1000);
+            document.getElementById("backdrop").classList.add("hidden");
+
+            setTimeout(() => {document.getElementById("backdrop").hidden = true}, 1000);
             currentPopup = "";
         }
 
         function otevriPopup(id){
             document.getElementById(id).classList.remove("hidden");
             document.getElementById("backdrop").classList.remove("hidden");
+            document.getElementById("backdrop").hidden = false;
             currentPopup = id;
+        }
 
+        function sendWsData(popup, data){
+            socket.send(JSON.stringify({
+              "dataType": popup,
+              "data": data
+            }))
         }
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -455,26 +516,58 @@
             <i class="fa-solid fa-bars"></i>
         </div>
     </nav>
+    <div class="content">
+        <div class="row">
+            <span>UPTIME esp: &nbsp;</span><span id="uptime"></span>
+        </div>
+        <div class="row">
+            <span>WiFi SSID: &nbsp;</span><span id="ssidStatus"></span>
+        </div>
+        <div class="row">
+            <span>WiFi IP: &nbsp;</span><span id="ipStatus"></span>
+        </div>
+
+    </div>
     <div id="dropdown" hidden>
         <span onclick='otevriPopup("wifi")'>Nastavení Wi-Fi</span>
-        <span>Nastavení zdrojů</span>
+        <span onclick='otevriPopup("sources")'>Nastavení zdrojů</span>
         <span>Nastavení stránky</span>
         <span>Status</span>
         <span>Restart</span>
     </div>
-    <div class="backdrop hidden" id="backdrop">
+    <div class="backdrop hidden" id="backdrop" hidden>
         <div class="popup hidden" id="wifi">
             <div id="closePopup" class="control" onclick="zavriPopup()">×</div>
             <div id="resetPopup" class="control">↻</div>
             <h1>Nastavení Wi-Fi</h1>
             <div class="row">
-                <label for="ssid">Název 2.4GHz sítě </label><input type="text" id="ssid">
+                <label for="ssid">Název 2.4GHz sítě </label><input type="text" id="ssid" data-onlyLocal>
             </div>
             <div class="row">
-                <label for="pass">Heslo sítě </label><input type="password" id="pass">
+                <label for="pass">Heslo sítě </label><input type="password" id="pass" data-onlyLocal>
             </div>
             <div class="row">
-                <button>Uložit</button>
+                <button onclick="save()">Uložit</button>
+            </div>
+        </div>
+        <div class="popup hidden" id="sources">
+            <div id="closePopup" class="control" onclick="zavriPopup()">×</div>
+            <div id="resetPopup" class="control">↻</div>
+            <h1>Nastavení Zdrojů</h1>
+            <div class="row">
+                <label for="apiKey">Golemio API klíč </label><input type="text" id="apiKey" data-onlyLocal>
+            </div>
+            <div class="row">
+                <label for="stopId">GTFS node ID:</label><input type="text" id="stopId">
+            </div>
+            <div class="row">
+                <label for="onlInterval">Online Interval </label><input type="number" id="onlInterval" data-onlyLocal step="5" min="0" placeholder="sekundy">
+            </div>
+            <div class="row">
+                <label for="offInterval">Offline Interval </label><input type="number" id="offInterval" data-onlyLocal step="5" min="0" placeholder="sekundy">
+            </div>
+            <div class="row">
+                <button onclick="save()">Uložit</button>
             </div>
         </div>
     </div>
