@@ -12,27 +12,30 @@
 #include <Adafruit_ST7789.h>  // Hardware-specific library for ST7789
 #include <SPI.h>
 #include "Fonts/FreeMonoBold30pt7b.h"  //40 mezi řádky optimál
-#include "Fonts/FreeSans18pt7b.h"      //40 mezi řádky optimál
-#include "Fonts/FreeSans12pt7b.h"
 #include "Fonts/FreeSansBold12pt7b.h"
 #include "FreeSans9pt7b.h"
-#include "FreeSansBold9pt7b.h"
 #include "gfxlatin2.h"
+#include "FreeSans18pt8b.h"
 #include "FreeSans12pt8b.h"
 #include "FreeSans9pt8b.h"
 #include "FreeSans8pt8b.h"
 #include "time.h"
+#include <DHT.h>
 
 
 const long  gmtOffset_sec = 3600;
 const int   daylightOffset_sec = 3600;
 const char* ntpServer = "pool.ntp.org";
-char tempText[100];
+const char *deg = "°C";
 
 
 #define TFT_CS 5    // Chip select control pin
 #define TFT_DC 22   // Data Command control pin
 #define TFT_RST 21  // Reset pin (could connect to Arduino RESET pin)
+
+#define LED_BLUE 32
+#define LED_GREEN 33
+#define LED_RED 25
 
 Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 
@@ -51,15 +54,19 @@ int onlInterval = 15;
 int offInterval = 5;
 int onlTimer = 0;
 int offTimer = 0;
+int temperature = 0;
+int humidity = 0;
+
 
 long currentMillis = 0;
 long startMillis = 0;
 bool wifiConnecting = false;
 bool apiAvailable = false;
+bool dhtAvailable = false;
 bool clockBlink = false;
 const char *apSsid = "JolandaAP";
 const char *apPass = "Admin123";
-
+String prevClock = "";
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 JsonDocument confJson;
@@ -67,8 +74,18 @@ JsonDocument infoJson;
 JsonDocument depJson;
 HTTPClient http;
 Preferences preferences;
-void setup() {
 
+#define DHTPIN 17
+#define DHTTYPE DHT11
+
+DHT dht(DHTPIN, DHTTYPE);
+void setup() {
+  char tempText[50];
+  pinMode(LED_RED, OUTPUT);
+  pinMode(LED_BLUE, OUTPUT);
+  pinMode(LED_GREEN, OUTPUT);
+  digitalWrite(LED_RED, HIGH);
+  dht.begin();
   tft.init(240, 320);
   tft.invertDisplay(0);
   tft.setRotation(1);
@@ -99,6 +116,8 @@ void setup() {
     Serial.println("GET na /");
   });
   startMillis = millis();
+  digitalWrite(LED_RED, LOW);
+
 }
 uint16_t rgb565(uint8_t r, uint8_t g, uint8_t b) {
   return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
@@ -189,6 +208,9 @@ void renderBoundaries() {
 }
 
 void clearArea(int id) {  // 0 = full displej; 1 = dvojtečka hodin; 2 = název zastávky; 3 = celá obrazovka odjezdů mimo název; 4 = čísla linek; 5 = konečné; 6 = časy;
+  //DEBUG!!!!!!!
+  Serial.print("Vyčištění area:");
+  Serial.println(id);
   if (id == 0) {
     tft.fillScreen(ST77XX_BLACK);
   }
@@ -196,16 +218,44 @@ void clearArea(int id) {  // 0 = full displej; 1 = dvojtečka hodin; 2 = název 
     tft.fillRect(150, 70, 15, 40, ST77XX_BLACK);
   }
   if (id == 2) {
-    tft.fillRect(0, 125, 320, 20, ST77XX_BLACK);
+    tft.fillRect(0, 120, 320, 25, ST77XX_BLACK);
   }
   if (id == 4 || id == 3) {
-    tft.fillRect(0, 145, 58, 85, ST77XX_BLACK);  //čísla linek
+    tft.fillRect(0, 145, 60, 85, ST77XX_BLACK);  //čísla linek
   }
   if (id == 5 || id == 3) {
     tft.fillRect(60, 145, 190, 85, ST77XX_BLACK);  //konečné
   }
   if (id == 6 || id == 3) {
     tft.fillRect(250, 145, 80, 85, ST77XX_BLACK);  //časy
+  }
+  /*if (id == 10){
+    tft.drawRect(65, 60, 40, 60, ST77XX_BLACK); //xH:HH
+  }
+  if (id == 11){
+    tft.drawRect(105, 60, 40, 60, ST77XX_BLACK); //Hx:HH
+  }
+  if (id == 12){
+    tft.drawRect(170, 60, 40, 60, ST77XX_BLACK); //HH:xH
+  }
+  if (id == 13){
+    tft.drawRect(210, 60, 40, 60, ST77XX_BLACK); //HH:Hx
+  }*/
+  switch (id){
+    case 10:
+      tft.fillRect(65, 60, 40, 60, ST77XX_BLACK); //xH:HH
+      Serial.println("ahoj z 10"); //debug
+    case 11:
+      tft.fillRect(105, 60, 40, 60, ST77XX_BLACK); //Hx:HH
+      Serial.println("ahoj z 11"); //debug
+
+    case 13:
+      tft.fillRect(170, 60, 40, 60, ST77XX_BLACK); //HH:xH
+      Serial.println("ahoj z 13"); //debug
+    case 14:
+      tft.fillRect(210, 60, 40, 60, ST77XX_BLACK); //HH:Hx
+      Serial.println("ahoj z 14"); //debug
+    break;
   }
 }
 
@@ -253,6 +303,8 @@ void update() {
     infoJson["data"]["wifi"]["state"] = wifiStatus;
     infoJson["data"]["wifi"]["address"] = ipAddress;
     infoJson["data"]["system"]["uptime"] = uptime;
+    infoJson["data"]["sensor"]["temperature"] = temperature;
+    infoJson["data"]["sensor"]["humidity"] = humidity;
     webSocketSendToAll(1);
   }
 }
@@ -358,11 +410,8 @@ void fetchData() {
   //http.begin("https://lpkuba.github.io/response_lihovar_most.json");
   String link = "https://api.golemio.cz/v2/pid/departureboards?aswIds=";
   link += id;
-  link += "&preferredTimezone=Europe_Prague&mode=departures&filter=routeHeadingOnceFill&skip=canceled&limit=4&total=4&offset=0&appendHeadsignsLimit=3";
+  link += "&preferredTimezone=Europe_Prague&mode=departures&filter=routeHeadingOnceFill&skip=canceled&limit=3&total=3&offset=0&appendHeadsignsLimit=0";
   http.begin(link);
-
-
-  
   http.addHeader("X-Access-Token", api);
   int httpResponseCode = http.GET();
   Serial.print("HTTP response kód: ");
@@ -378,16 +427,19 @@ void fetchData() {
     apiAvailable = false;
     Serial.println("...neúspěch");
   }
+  http.end();
   renderDepartures();
 }
 
 void renderDepartures() {
-
+  char tempText[50];
   Serial.println("renderDepartures() zavoláno");
   tft.setTextColor(ST77XX_WHITE);
   tft.setCursor(10, 135);
   tft.setFont(&FreeSans8pt8b);
   clearArea(2);
+  clearArea(2);
+
   if(apiAvailable == false){
     strcpy(tempText, "API nedostupné!");
     utf8tocp(tempText);
@@ -445,42 +497,6 @@ void renderDepartures() {
     }
     tft.print(departure);
   }
-
-  /*tft.setCursor(firstX, firstY - 2);
-    tft.setFont(&FreeSansBold12pt7b);
-    tft.setTextColor(getColor("metroA"));
-    tft.print("A");
-    tft.setCursor(firstX + 50 , firstY);
-    tft.setFont(&FreeSans12pt8b);
-    tft.setTextColor(ST77XX_WHITE);
-    tft.print("Depo Hostivar");
-    tft.setCursor(firstX + 250, firstY);
-    tft.setTextColor(getColor("orange"));
-    tft.print("2 min");
-    linePosition++;
-    tft.setCursor(firstX , firstY + lineSpacing*linePosition);
-    tft.setFont(&FreeSansBold12pt7b);
-    tft.setTextColor(getColor("bus"));
-    tft.print("199");
-    tft.setCursor(firstX + 50, firstY + lineSpacing*linePosition);
-    tft.setFont(&FreeSans12pt8b);
-    tft.setTextColor(ST77XX_WHITE);
-    tft.print("Sidliste Malesice");
-    tft.setCursor(firstX + 250, firstY + lineSpacing*linePosition);
-    tft.setTextColor(getColor("green"));
-    tft.print("3 min");
-    linePosition++;
-    tft.setCursor(firstX , firstY + lineSpacing*linePosition);
-    tft.setFont(&FreeSansBold12pt7b);
-    tft.setTextColor(getColor("train"));
-    tft.print("S61");
-    tft.setCursor(firstX + 50, firstY + lineSpacing*linePosition);
-    tft.setFont(&FreeSans12pt8b);
-    tft.setTextColor(ST77XX_WHITE);
-    tft.print("Praha hl.n.");
-    tft.setCursor(firstX + 250, firstY + lineSpacing*linePosition);
-    tft.setTextColor(getColor("green"));
-    tft.print("3 min");*/
 }
 
 uint16_t getTransportColor(int id) {
@@ -523,20 +539,50 @@ uint16_t getTransportColor(int id) {
 
 void readSensors() {
   Serial.println("CHYBÍ TI TY ZASRANÝ SENZORY KURVA");
-  renderMeteo(10, 25);
+  float h = dht.readHumidity();
+  float t = dht.readTemperature();
+  temperature = (int)t;
+  humidity = (int)h;
+  Serial.println("jsme za čtením bro0");
+  if (!(isnan(h) || isnan(t))){
+    renderMeteo(temperature, humidity);
+    dhtAvailable = true;
+  }
+  else{
+    Serial.println("Chyba vyčítání DHT");
+    dhtAvailable = false;
+  }
+  renderMeteo((int)t, (int)h);
 }
 
-void renderMeteo(int temperature, int humidity) {
-  tft.setTextColor(ST77XX_WHITE);
-  tft.fillRect(0, 0, 320, 45, getColor("darkgray"));
-  tft.setCursor(20, 30);
-  tft.setFont(&FreeSans18pt7b);
-  tft.print(temperature);
-  tft.write(0xF8);
-  tft.print("c");
-  tft.setCursor(220, 30);
-  tft.print(humidity);
-  tft.print("%");
+void renderMeteo(int a, int b) {
+    tft.setTextColor(ST77XX_WHITE);
+    tft.fillRect(0, 0, 320, 45, getColor("darkgray"));
+    tft.setCursor(20, 30);
+    tft.setFont(&FreeSans18pt8b);
+    char localBuffer[20];
+    memset(localBuffer, 0, sizeof(localBuffer));  // Vyčisti buffer
+    sprintf(localBuffer, "%d°C", a);
+    utf8tocp(localBuffer);
+    tft.print(localBuffer);
+    tft.setCursor(220, 35);
+    tft.print(b);
+    tft.print("%");
+    if(a < 16){
+      digitalWrite(LED_RED, LOW);
+      digitalWrite(LED_BLUE, HIGH);
+      digitalWrite(LED_GREEN, LOW);
+    }
+    if(a < 25){
+      digitalWrite(LED_RED, LOW);
+      digitalWrite(LED_BLUE, LOW);
+      digitalWrite(LED_GREEN, HIGH);
+    }
+    if(a > 25){
+      digitalWrite(LED_RED, HIGH);
+      digitalWrite(LED_BLUE, LOW);
+      digitalWrite(LED_GREEN, LOW);
+    }
 }
 
 
@@ -548,6 +594,14 @@ void renderClock() {
   }
   char timeString[6];
   strftime(timeString, sizeof(timeString), "%H:%M", &timeinfo); 
+  String strToCompare = String(timeString);
+  for(int i = 0; i < strToCompare.length(); i++){
+    if(strToCompare[i] != prevClock[i]){
+      clearArea(i+10);
+      prevClock = strToCompare;
+      break;
+    }
+  }
   tft.setCursor(70, 100);
   tft.setFont(&FreeMonoBold30pt7b);
   tft.setTextColor(ST77XX_WHITE, ST77XX_BLACK);
